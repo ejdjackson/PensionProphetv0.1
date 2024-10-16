@@ -121,7 +121,7 @@
                             <div class="form-group">
                                 <label>
                                   <input type="checkbox" id="DBPensionCheckbox" value=false>
-                                   Defined Benefit Pension
+                                   Add Defined Benefit Pension
                                 </label>
                             </div>
 
@@ -185,15 +185,15 @@
                                             
                                         </tr>
                                         <tr>
-                                            <td>Tax-Free Cash Lump Sum at Retirement</td>
+                                            <td>Tax Free Cash Lump Sum at Retirement</td>
                                             
                                             <td id="taxFreeCashTakenTodaysMoney" class="result-value" style="text-align: right;">£0</td>
                                         </tr>
-                                        <tr>
+                                       <!--  <tr>
                                             <td>Total Pension Fund Charges</td>
                                             
                                             <td id="totalFundChargesTodaysMoney" class="result-value" style="text-align: right; color: red;">£0</td>
-                                        </tr>
+                                        </tr> -->
                                     </tbody>
                                 </table>
                             </div>
@@ -210,10 +210,9 @@
                         <div class="explainer" id="instructionsText">
                             <p>
                                 <strong> Instructions:</strong> 
-                                <br>1: Enter values in the input boxes. 
-                                <br>2: Click or press the Calculate button.
-                                <br>3: If you see any red in the graph, adjust the inputs to optimise your retirement.
-                                <br>4: Add extra features via the checkboxes.
+                                <br>1: Enter values in the input boxes and press Calculate.
+                                <br>2: If you see any red in the graph, adjust the inputs to optimise your retirement.
+                                <br>3: Add extra features as required via the checkboxes.
                             </p>
                         </div>
 
@@ -221,14 +220,14 @@
                         <canvas id="fundChart"></canvas>
 
                         <!-- Explainer Section -->
-                        <div class="explainer" id="explainerText">
+                      <!--   <div class="explainer" id="explainerText">
                             <p>
                                 <strong> The calculator performs the following steps:</strong> 
                                 <br> Step 1:  Accumulate  funds to the selected retirement age.
                                 <br>Step 2:  Simulate drawdown in retirement multiple times to find the maximum affordable retirement income without running out funds.
                                 <br>Step 3: Optimise the split of pension fund and ISA withdrawals in payment to minimise tax.
                             </p>
-                        </div>
+                        </div> -->
                         
                          <!-- Assumptions Section -->
                          <div class="explainer" id="explainerText">
@@ -247,7 +246,7 @@
                         <!-- Disclaimer Section -->
                         <div class="disclaimer">
                             <p>
-                                <strong>Disclaimer:</strong> The Pension Calculator is provided for informational purposes only and does not constitute financial advice. The calculations and projections offered by this tool are based on user-provided inputs and general assumptions, which may not reflect your specific circumstances or needs. The results should not be relied upon as a sole basis for financial decisions. For personalised financial advice tailored to your individual situation, please consult a qualified financial adviser.
+                                <strong>Disclaimer:</strong> Pension Prophet is for information purposes only and does not constitute financial advice. The calculations and projections offered by this tool are based on user-provided inputs and general assumptions, which may not reflect your specific circumstances or needs. The results should not be relied upon as a sole basis for financial decisions. For personalised financial advice tailored to your individual situation, please consult a qualified financial adviser.
                             </p>
                         </div>
 
@@ -267,7 +266,7 @@
                             <div class="form-group">
                                 <label for="retirementAge">Desired Retirement Age:</label>
                                 <div class="tooltip left-tooltip">
-                                    <input type="number" id="retirementAge" name="retirementAge" value="55" required>
+                                    <input type="number" id="retirementAge" name="retirementAge" value="60" required>
                                     <span class="tooltiptext">Enter the age you plan to retire.</span>
                                 </div>
                             </div>
@@ -303,16 +302,31 @@
                                 </div>
                             </div>
 
-                            
+                           
                             <div class="form-group">
+                                <label>
+                                  <input type="checkbox" id="fundChargesCheckbox">
+                                  See Effect of Fund Charges
+                                </label>
+                            </div>
+
+                            <div class="form-group hidden" id="inputFundChargesDiv" >
                                 <label for="fundCharges">Fund Charges (%):</label>
                                 <div class="tooltip left-tooltip">
-                                    <input type="number" id="fundCharges" name="fundCharges" value="1" step="0.05" required>
+                                    <input type="number" id="fundChargesInput" name="fundCharges" value="0" step="0.05" required>
                                     <span class="tooltiptext">Enter the annual fund charge on your pension fund.</span>
                                 </div>
                             </div>
                             
+
                             <div class="form-group">
+                                <label>
+                                  <input type="checkbox" id="TFCCheckbox">
+                                  Take &lt; 25% TFC lump sum
+                                </label>
+                            </div>
+
+                            <div class="form-group hidden" id="inputTFCDiv" >
                                 <label for="taxFreeCashPercent">Tax Free Cash Lump Sum (%):</label>
                                 <div class="tooltip left-tooltip">
                                     <input type="number" id="taxFreeCashPercent" name="taxFreeCashPercent" value="25" max="25" step="5" required>
@@ -322,6 +336,13 @@
                             
                             <!-- Add Inflation Inputs -->
                             <div class="form-group">
+                                <label>
+                                  <input type="checkbox" id="inflationCheckBox">
+                                  Specify Inflation Rate
+                                </label>
+                            </div>
+
+                            <div class="form-group hidden" id="inputInflationDiv" >
                                 <label for="inflation">Inflation Rate (%):</label>
                                 <div class="tooltip left-tooltip">
                                     <input type="number" id="inflation" name="inflation" value="2" step="0.1"required>
@@ -329,10 +350,18 @@
                                 </div>
                             </div>
                             
-                            <div class="form-group" style="display: flex; align-items: top;" id="Scotland">
+                            <div class="form-group">
+                                <label for="useScottishTax" >
+                                  <input type="checkbox" id="useScottishTax"  name="useScottishTax" onclick="calculatePension()">
+                                  Use Scottish Tax Regime
+                                </label>
+                                
+                            </div>
+
+                            <!-- <div class="form-group" style="display: flex; align-items: top;" id="Scotland">
                                 <label for="useScottishTax" style="margin-right: 10px;">Use Scottish Tax Regime:</label>
                                 <input type="checkbox" id="useScottishTax" name="useScottishTax" onclick="calculatePension()">
-                            </div>
+                            </div> -->
                             
 
 
@@ -466,7 +495,7 @@
                                 <span class="info-icon" tabindex="0" aria-label="More information about TFC Tax Savings">i</span>
                                 <div class="info-popup" role="tooltip" aria-hidden="true">
                                     <button class="close-btn" aria-label="Close">&times;</button>
-                                    <p>TFC Tax Savings:<br><br>The amount of pension taken tax-free as part of Tax-Free Cash (TFC) allowance not taken as a lump sum at retirement. <br><br>Any remaining TFC% not taken as a lump sum gives tax relief of the remaining % for all future pension payments. <br><br>So if only 15% of the maximum 25% TFC is taken, all future pension payments are 10% tax free, up to the cumulative limit of £268,275.</p>
+                                    <p>TFC Tax Savings:<br><br>The amount of pension taken tax free as part of Tax Free Cash (TFC) allowance not taken as a lump sum at retirement. <br><br>Any remaining TFC% not taken as a lump sum gives tax relief of the remaining % for all future pension payments. <br><br>So if only 15% of the maximum 25% TFC is taken, all future pension payments are 10% tax free, up to the cumulative limit of £268,275.</p>
                                 </div>
                             </th>
 

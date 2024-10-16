@@ -64,34 +64,16 @@ function calculatePension() {
     // Get inputs from the right form
     var fundGrowthPre = parseFloat(document.getElementById("fundGrowthPre").value) / 100;
     var fundGrowthPost = parseFloat(document.getElementById("fundGrowthPost").value) / 100;
-    var fundCharges = parseFloat(document.getElementById("fundCharges").value) / 100;
+    var fundCharges = parseFloat(document.getElementById("fundChargesInput").value) / 100;
     var taxFreeCashPercent = parseFloat(document.getElementById("taxFreeCashPercent").value) / 100;
 
     var inflation = parseFloat(document.getElementById("inflation").value) / 100;
     var statePensionInflation = Math.max(inflation,0.025);
-    var earliestPensionWithdrawalAge = getEarliestPensionAge(currentAge);
     var dbPensionEscalation = inflation;
 
-    // Validate inputs
-    /* if (isNaN(currentAge) || isNaN(retirementAge) || isNaN(endAge) || isNaN(currentFund) || isNaN(monthlyContribution) ||
-        isNaN(fundGrowthPre) || isNaN(fundGrowthPost) || isNaN(fundCharges) || isNaN(taxFreeCashPercent) ||
-        isNaN(currentISA) || isNaN(monthlyISAContribution) || isNaN(currentStatePension) ||
-        isNaN(inflation) || isNaN(statePensionInflation) || isNaN(dbPensionAmount) ||
-        isNaN(dbPensionAge) || isNaN(dbPensionEscalation) || isNaN(minISABalance)) {
-        alert("Please enter valid numbers in all fields.");
-        return;
-    } */
+    var earliestPensionWithdrawalAge = getEarliestPensionAge(currentAge);
 
-    //if (currentAge >= retirementAge || retirementAge > endAge) {
-    //   alert("Ensure that Current Age < Retirement Age ≤ End of Projection Age.");
-    //    return;
-    //}
-
-    /* if (currentAge >= retirementAge) {
-        alert("Current Age >= Retirement Age. Already retired, so withdrawal begins immediately. The calculation will assume full TFC taken at retirement.");
-        return;
-    } */
-
+    //Validate inputs
     if (stepUpAge >= retirementAge) {
         alert("Contribution Increase Age >= Retirement Age");
         return;
@@ -186,7 +168,7 @@ function calculatePension() {
 
     // Display total fund charges in the results table
     //document.getElementById("totalFundCharges").innerHTML = '<strong>£' + formatNumber(Math.round(totalFundCharges)) + '</strong>';
-    document.getElementById("totalFundChargesTodaysMoney").innerHTML = '<strong>£' + formatNumber(Math.round(totalFundCharges*discountFactor)) + '</strong>';
+    //document.getElementById("totalFundChargesTodaysMoney").innerHTML = '<strong>£' + formatNumber(Math.round(totalFundCharges*discountFactor)) + '</strong>';
 
     // Plot charts and display table
     plotChart(simulation);
@@ -358,6 +340,7 @@ function simulateCombinedFund(
 
     var fundsDepletedBeforeEndAge = false; // Flag to track early depletion
     var previousGrossPensionWithdrawal = 0; // Initialise previous gross pension withdrawal
+    var showEarliestPensionAgeWarning = false;
     
 
     var dbPensionProjectionOnly = false;
@@ -370,13 +353,8 @@ function simulateCombinedFund(
 
     for (var age = startAge; age <= maxAge ; age++) {
         var openingFundBalance = fund;
-        var openingISABalance = ISA;
         var alreadyRetired = currentAge >= retirementAge;
         var negativeShortfall = 0;
-
-        if(age==97){
-            age=age;
-        }
 
         // Adjust state pension each year
         if (age >= statePensionAge) {
@@ -451,26 +429,25 @@ function simulateCombinedFund(
         var upperGuess = fund; // Maximum possible gross pension withdrawal
 
         // Set initial guess for gross pension withdrawal
-        if (age >= earliestPensionWithdrawalAge) {
-            // From age 57 onwards, prioritise pension withdrawals up to personal allowance
-            var adjustedPersonalAllowance = calcPersonalAllowance(age, currentAge, inflation);
+        // From age 57 onwards, prioritise pension withdrawals up to personal allowance
+        var adjustedPersonalAllowance = calcPersonalAllowance(age, currentAge, inflation);
 
-            // Calculate maximum taxable pension withdrawal to utilise personal allowance
-            var maxTaxablePensionWithdrawal = adjustedPersonalAllowance - statePensionInPayment - dbPensionInPayment;
-            maxTaxablePensionWithdrawal = Math.max(maxTaxablePensionWithdrawal, 0);
+        // Calculate maximum taxable pension withdrawal to utilise personal allowance
+        var maxTaxablePensionWithdrawal = adjustedPersonalAllowance - statePensionInPayment - dbPensionInPayment;
+        maxTaxablePensionWithdrawal = Math.max(maxTaxablePensionWithdrawal, 0);
 
-            // Add back tax-free portion to get gross pension withdrawal
-            var maxGrossPensionWithdrawal = maxTaxablePensionWithdrawal / (1 - remainingTFCPercent);
+        // Add back tax-free portion to get gross pension withdrawal
+        var maxGrossPensionWithdrawal = maxTaxablePensionWithdrawal / (1 - remainingTFCPercent);
 
-            // Ensure we don't withdraw more than needed
-            grossPensionWithdrawal = Math.min(maxGrossPensionWithdrawal, netIncomeNeededFromInvestments / (1 - remainingTFCPercent), fund);
-        } else {
-            grossPensionWithdrawal = 0; // Before age 57, pension withdrawals are not possible
-        }
-
+        // Ensure we don't withdraw more than needed
+        grossPensionWithdrawal = Math.min(maxGrossPensionWithdrawal, netIncomeNeededFromInvestments / (1 - remainingTFCPercent), fund);
+        
         grossPensionWithdrawal = Math.min(Math.max(grossPensionWithdrawal, lowerGuess), upperGuess);
 
-
+        
+        if (age < earliestPensionWithdrawalAge) {
+            grossPensionWithdrawal = 0; // Before age 57, pension withdrawals are not possible
+        }
 
         // Start of the main calculation
         while (iterations < iterationLimit) {
@@ -561,8 +538,14 @@ function simulateCombinedFund(
 
                 while (iterations < iterationLimit) {
                     // Adjust grossPensionWithdrawal using bisection method
-                    grossPensionWithdrawal = (lowerGuess + upperGuess) / 2;
-
+                    if (age < earliestPensionWithdrawalAge) {
+                        grossPensionWithdrawal = 0; // Before age 57, pension withdrawals are not possible
+                        showEarliestPensionAgeWarning = true;    
+                    }
+                    else {
+                        grossPensionWithdrawal = (lowerGuess + upperGuess) / 2;
+                    }
+                    
                     // Recalculate tax-free portion (may be zero if TFC is exhausted)
                     if (age < earliestPensionWithdrawalAge || cumulativeTFC >= maxTFCAmount || alreadyRetired) {
                         taxFreePortion = 0;
@@ -699,6 +682,8 @@ function simulateCombinedFund(
 
         // Store for next iteration
         previousGrossPensionWithdrawal = grossPensionWithdrawal; 
+
+        
         
 
         if (fund <= tolerance && ISAExhausted && dbPensionProjectionOnly == false && finalProjection==false) {
@@ -711,6 +696,10 @@ function simulateCombinedFund(
     }
 
     var finalBalance = fund + ISA;
+
+    if (finalProjection && showEarliestPensionAgeWarning && ISAAtRetirement == 0) {
+        alert("Cannot take pension income before age " + earliestPensionWithdrawalAge + ".\nNeed sufficient ISA funds to retire before this age.")
+    }
 
     return {
         finalBalance: finalBalance,
